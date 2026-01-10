@@ -34,6 +34,6 @@ inputs = {
   autoscale          = false # EIS: Test draait op 1 instance
   
   # Secrets
-  db_secret_arn      = "arn:aws:secretsmanager:us-east-1:123456789:secret:test/db-pass"
-  media_secret_arn   = "arn:aws:secretsmanager:us-east-1:123456789:secret:test/media-key"
+  db_secret_arn      = "arn:aws:secretsmanager:us-east-1:905418273841:secret:test/db-pass"
+  media_secret_arn   = "arn:aws:secretsmanager:us-east-1:905418273841:secret:test/media-key"
 }
