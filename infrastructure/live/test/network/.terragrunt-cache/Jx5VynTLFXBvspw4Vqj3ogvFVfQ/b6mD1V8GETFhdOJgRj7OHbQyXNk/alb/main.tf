@@ -1,7 +1,3 @@
-terraform {
-  backend "s3" {}
-}
-
 # --- 1. Security Group voor de Load Balancer ---
 resource "aws_security_group" "alb" {
   name        = "pxl-${var.environment}-alb-sg"

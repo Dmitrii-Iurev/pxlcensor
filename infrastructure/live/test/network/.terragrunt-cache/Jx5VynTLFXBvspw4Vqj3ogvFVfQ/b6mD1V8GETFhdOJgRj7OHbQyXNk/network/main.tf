@@ -1,7 +1,3 @@
-terraform {
-  backend "s3" {}
-}
-
 data "aws_availability_zones" "available" {}
 
 resource "aws_vpc" "main" {
