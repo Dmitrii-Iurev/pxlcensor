@@ -4,7 +4,7 @@ remote_state {
   config = {
     bucket         = "pxlcensor-terraform-state"
     key            = "${path_relative_to_include()}/terraform.tfstate"
-    region         = "eu-west-1"
+    region         = "us-east-1"
     dynamodb_table = "pxlcensor-locks"
     encrypt        = true
   }
