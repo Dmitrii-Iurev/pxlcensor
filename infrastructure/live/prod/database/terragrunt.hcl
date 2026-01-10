@@ -17,5 +17,5 @@ inputs = {
   private_subnet_ids = dependency.network.outputs.private_subnet_ids
   
   # Zorg dat je een unieke secret hebt voor productie!
-  db_secret_arn      = "arn:aws:secretsmanager:us-east-1:123456789:secret:prod/db-pass"
+  db_secret_arn      = "arn:aws:secretsmanager:us-east-1:905418273841:secret:prod/db-pass"
 }
