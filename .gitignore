@@ -138,3 +138,16 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Terragrunt cache
+.terragrunt-cache/
+
+# Terraform bestanden
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# OS bestanden
+Thumbs.db
+.DS_Store

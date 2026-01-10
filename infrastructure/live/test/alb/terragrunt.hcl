@@ -17,5 +17,5 @@ inputs = {
   public_subnet_ids = dependency.network.outputs.public_subnet_ids
   services          = ["frontend", "api", "media"]
   # Gebruik hier de ARN van het certificaat dat je (handmatig of via ACM) hebt
-  ssl_cert_arn      = "arn:aws:acm:us-east-1:123456789:certificate/uuid"
+  ssl_cert_arn      = "arn:aws:acm:us-east-1:905418273841:certificate/uuid"
 }

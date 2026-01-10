@@ -1,3 +1,7 @@
+terraform {
+  backend "s3" {}
+}
+
 # --- 1. IAM Roles voor ECS ---
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "pxl-${var.environment}-ecs-task-execution-role"
