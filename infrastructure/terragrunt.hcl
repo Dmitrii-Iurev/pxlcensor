@@ -3,7 +3,7 @@
 remote_state {
   backend = "s3"
   config = {
-    bucket         = "pxlcensor-terraform-state23"
+    bucket         = "pxlcensor-terraform-state24"
     key            = "${path_relative_to_include()}/terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "pxlcensor-locks"
