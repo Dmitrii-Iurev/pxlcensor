@@ -22,7 +22,7 @@ inputs = {
   # Netwerk & Database (komen uit prod dependencies)
   vpc_id             = dependency.network.outputs.vpc_id
   private_subnet_ids = dependency.network.outputs.private_subnet_ids
-  db_endpoint        = dependency.database.outputs.db_endpoint
+  db_endpoint = dependency.database.outputs.db_endpoint
   
   # VOEG DEZE REGEL TOE:
   alb_sg_id          = dependency.alb.outputs.alb_sg_id

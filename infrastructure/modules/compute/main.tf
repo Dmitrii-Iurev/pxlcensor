@@ -2,8 +2,7 @@ terraform {
   backend "s3" {}
 }
 
-# --- 1. Bestaande IAM Role ophalen (AWS Academy Fix) ---
-# We gebruiken 'data' in plaats van 'resource' omdat we geen rollen mogen maken.
+# --- 1. IAM Role (Academy Fix) ---
 data "aws_iam_role" "lab_role" {
   name = "LabRole"
 }
@@ -36,8 +35,6 @@ resource "aws_ecs_task_definition" "tasks" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "512"
   memory                   = "1024"
-  
-  # GEBRUIK DE LABROLE ARN HIER
   execution_role_arn       = data.aws_iam_role.lab_role.arn
   task_role_arn            = data.aws_iam_role.lab_role.arn
 
@@ -46,18 +43,20 @@ resource "aws_ecs_task_definition" "tasks" {
     image = "pxlcensor/${each.key}:latest"
     
     portMappings = [{
-      containerPort = (each.key == "api" ? 3000 : each.key == "media" ? 8081 : each.key == "frontend" ? 8080 : 80)
-      hostPort      = (each.key == "api" ? 3000 : each.key == "media" ? 8081 : each.key == "frontend" ? 8080 : 80)
+      # CORRECTIE: Frontend op 80, Media op 8081, API op 3000
+      containerPort = (each.key == "api" ? 3000 : each.key == "media" ? 8081 : 80)
+      hostPort      = (each.key == "api" ? 3000 : each.key == "media" ? 8081 : 80)
     }]
 
     environment = [
       { name = "BASE_URL", value = var.base_url },
+      # TIP: Gebruik de DB Host uit de module
       { name = "DATABASE_URL", value = "postgres://postgres@${var.db_endpoint}/pxlcensor" }
     ]
 
     secrets = [
       { name = "MEDIA_SIGNING_SECRET", valueFrom = var.media_secret_arn },
-      { name = "POSTGRES_PASSWORD", valueFrom = var.db_secret_arn }
+      { name = "POSTGRES_PASSWORD",    valueFrom = var.db_secret_arn }
     ]
 
     mountPoints = [{
@@ -84,6 +83,9 @@ resource "aws_ecs_service" "services" {
   launch_type     = "FARGATE"
   desired_count   = 1
 
+  # CRUCIAAL: Wacht tot EFS klaar is voor de containers starten
+  depends_on = [aws_efs_mount_target.media_mount]
+
   network_configuration {
     subnets         = var.private_subnet_ids
     security_groups = [aws_security_group.app_sg.id]
@@ -94,14 +96,15 @@ resource "aws_ecs_service" "services" {
     content {
       target_group_arn = var.target_group_arns[each.key]
       container_name   = each.key
-      container_port   = (each.key == "api" ? 3000 : each.key == "media" ? 8081 : 8080)
+      container_port   = (each.key == "api" ? 3000 : each.key == "media" ? 8081 : 80)
     }
   }
 }
 
-# --- 6. Autoscaling ---
-resource "aws_appautoscaling_target" "api_processor_scale" {
-  for_each = (var.environment == "prod" && var.autoscale) ? toset(["api", "processor"]) : toset([])
+# --- 6. Autoscaling (Eis: PROD min 1, max 2) ---
+resource "aws_appautoscaling_target" "scaling" {
+  # 'media' is de service die de processing doet
+  for_each = (var.environment == "prod") ? toset(["api", "media"]) : toset([])
 
   max_capacity       = 2
   min_capacity       = 1
@@ -113,7 +116,6 @@ resource "aws_appautoscaling_target" "api_processor_scale" {
 # --- 7. Security Groups ---
 resource "aws_security_group" "app_sg" {
   name        = "pxl-${var.environment}-app-sg"
-  description = "Toegang voor ECS services"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -132,9 +134,8 @@ resource "aws_security_group" "app_sg" {
 }
 
 resource "aws_security_group" "efs_sg" {
-  name        = "pxl-${var.environment}-efs-sg"
-  description = "Toegang tot EFS vanaf de app"
-  vpc_id      = var.vpc_id
+  name   = "pxl-${var.environment}-efs-sg"
+  vpc_id = var.vpc_id
 
   ingress {
     from_port       = 2049
