@@ -11,7 +11,7 @@ remote_state {
   }
 }
 
-# DIT VOEGT DE ONTBREKENDE PROVIDER CONFIG TOE AAN ELKE MODULE
+# DIT ZORGT VOOR DE EXPLICIT CONFIGURATIE (Lost Error 1 op)
 generate "provider" {
   path      = "provider.tf"
   if_exists = "overwrite_terragrunt"
@@ -22,4 +22,5 @@ provider "aws" {
 EOF
 }
 
-# VERWIJDER HET OUDE "extra_arguments" BLOK VOLLEDIG
+# VERWIJDER HET "extra_arguments" BLOK DAT JE EERDER HAD
+# DAT BLOK ZOCHT NAAR AWS_PROFILE = "default" EN DAT VEROORZAAKT ERROR 2
