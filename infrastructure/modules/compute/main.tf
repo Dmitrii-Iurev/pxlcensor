@@ -136,3 +136,50 @@ resource "aws_appautoscaling_target" "api_processor_scale" {
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
+
+# --- 7. Security Groups ---
+
+# Security Group voor de Applicaties (ECS Tasks)
+resource "aws_security_group" "app_sg" {
+  name        = "pxl-${var.environment}-app-sg"
+  description = "Toegang voor ECS services"
+  vpc_id      = var.vpc_id
+
+  # Inkomend verkeer van de ALB
+  ingress {
+    from_port       = 0
+    to_port         = 65535
+    protocol        = "tcp"
+    security_groups = [var.alb_sg_id]
+  }
+
+  # Uitgaand verkeer naar overal (voor updates/interne communicatie)
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Security Group voor de EFS (Shared Storage)
+resource "aws_security_group" "efs_sg" {
+  name        = "pxl-${var.environment}-efs-sg"
+  description = "Toegang tot EFS vanaf de app"
+  vpc_id      = var.vpc_id
+
+  # Alleen de apps (app_sg) mogen bij de EFS op poort 2049 (NFS)
+  ingress {
+    from_port       = 2049
+    to_port         = 2049
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}

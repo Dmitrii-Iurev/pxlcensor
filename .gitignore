@@ -148,6 +148,11 @@ vite.config.ts.timestamp-*
 *.tfstate.backup
 .terraform.lock.hcl
 
+*.pem
+*.key
+.terragrunt-cache/
+terraform.tfstate*
+
 # OS bestanden
 Thumbs.db
 .DS_Store

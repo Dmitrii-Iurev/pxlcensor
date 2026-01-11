@@ -30,7 +30,7 @@ inputs = {
   base_url           = "https://${dependency.alb.outputs.alb_dns_name}"
 
   # VOEG DEZE REGEL TOE:
-  alb_sg_id          = dependency.alb.outputs.alb_security_group_id
+  alb_sg_id          = dependency.alb.outputs.alb_sg_id
   
   # Applicatie instellingen
   services           = ["frontend", "api", "media", "processor"]
