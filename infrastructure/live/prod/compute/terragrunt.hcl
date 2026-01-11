@@ -12,6 +12,7 @@ dependency "alb"      { config_path = "../alb" }
 
 inputs = {
   environment        = "prod"
+  region             = "us-east-1"
   autoscale          = true  # EIS: Schakel autoscaling in voor PROD
   
   # Capaciteit instellingen voor de Processor/API
