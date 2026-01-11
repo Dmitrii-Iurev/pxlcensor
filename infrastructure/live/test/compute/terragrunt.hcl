@@ -20,6 +20,10 @@ dependency "alb" {
 
 inputs = {
   environment        = "test"
+  api_min_capacity       = 1
+  api_max_capacity       = 2
+  processor_min_capacity = 1
+  processor_max_capacity = 2
   region             = "us-east-1"
   vpc_id             = dependency.network.outputs.vpc_id
   private_subnet_ids = dependency.network.outputs.private_subnet_ids
