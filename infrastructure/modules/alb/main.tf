@@ -62,25 +62,32 @@ resource "aws_lb_target_group" "tg" {
   }
 }
 
-# --- 4. Certificaat ---
+# --- 1. Het certificaat aanvragen ---
 resource "aws_acm_certificate" "cert" {
   domain_name       = "pxlcensor.local"
   validation_method = "DNS"
 
+  # DIT IS DE KEY: Zorg dat Terraform niet probeert te wachten
   lifecycle {
     create_before_destroy = true
   }
+
+  # Optioneel: Sommige provider versies accepteren dit om wachten te voorkomen
+  options {
+    certificate_transparency_logging_preference = "ENABLED"
+  }
 }
 
-# --- 4. HTTPS Listener ---
+# --- 2. De Listener ---
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.alb.arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
   
-  # GEBRUIK HIER DE VARIABELE UIT TERRAGRUNT
-  certificate_arn   = var.ssl_cert_arn 
+  # We koppelen de ARN direct. Omdat er GEEN 'aws_acm_certificate_validation' 
+  # resource in je code staat, zou Terraform direct door moeten gaan.
+  certificate_arn   = aws_acm_certificate.cert.arn 
 
   default_action {
     type             = "forward"

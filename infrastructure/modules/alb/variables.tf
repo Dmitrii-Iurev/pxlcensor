@@ -18,9 +18,11 @@ variable "public_subnet_ids" {
   description = "Lijst van publieke subnets voor de ALB"
 }
 
+# In modules/alb/variables.tf
 variable "ssl_cert_arn" {
+  description = "Niet meer nodig als we het cert zelf maken"
   type        = string
-  description = "De ARN van het (self-signed) certificaat voor HTTPS"
+  default     = null # Dit zorgt ervoor dat hij niet meer verplicht is
 }
 
 variable "services" {

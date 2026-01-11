@@ -37,6 +37,6 @@ inputs = {
   autoscale          = false # EIS: Test draait op 1 instance
   
   # Secrets
-  db_secret_arn    = dependency.database.outputs.db_secret_arn
+  db_secret_arn = dependency.database.outputs.db_secret_arn
   media_secret_arn = dependency.database.outputs.media_secret_arn
 }

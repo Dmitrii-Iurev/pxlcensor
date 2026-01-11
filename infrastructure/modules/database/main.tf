@@ -6,31 +6,30 @@ provider "aws" {
   region = var.region
 }
 
-# Secrets ophalen uit Secrets Manager
-data "aws_secretsmanager_secret_version" "db" {
-  secret_id = var.db_secret_arn
-}
-
-# RDS PostgreSQL instance
+# 1. DB Subnet Group
 resource "aws_db_subnet_group" "main" {
-  name       = "${var.environment}-db-subnet-group"
-  subnet_ids = var.private_subnet_ids
+  name        = "${var.environment}-db-subnet-group"
+  subnet_ids  = var.private_subnet_ids
 }
 
+# 2. De Database Instance
 resource "aws_db_instance" "postgres" {
-  identifier        = "${var.environment}-postgres"
-  engine            = "postgres"
-  instance_class    = "db.t3.micro"
-  allocated_storage = 20
-  username          = jsondecode(data.aws_secretsmanager_secret_version.db.secret_string)["username"]
-  password          = jsondecode(data.aws_secretsmanager_secret_version.db.secret_string)["password"]
-  db_subnet_group_name = aws_db_subnet_group.main.name
+  identifier           = "${var.environment}-postgres"
+  engine               = "postgres"
+  instance_class       = "db.t3.micro"
+  allocated_storage    = 20
+  
+  # GEBRUIK HIER DIRECT DE VARIABELEN (Niet de data source!)
+  username             = "postgres"
+  password             = var.db_password 
+  
+  db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.db.id]
-  skip_final_snapshot = true
-  publicly_accessible = false
+  skip_final_snapshot    = true
+  publicly_accessible    = false
 }
 
-# Security Group voor database
+# 3. Security Group
 resource "aws_security_group" "db" {
   name        = "${var.environment}-db-sg"
   description = "Allow access from internal services only"
@@ -40,7 +39,7 @@ resource "aws_security_group" "db" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"] # private netwerk
+    cidr_blocks = ["10.0.0.0/16"] 
   }
 
   egress {
@@ -51,34 +50,34 @@ resource "aws_security_group" "db" {
   }
 }
 
-# Genereert een unieke suffix voor de secret naam
+# 4. Unieke ID voor Secret Namen
 resource "random_id" "secret_suffix" {
   byte_length = 4
 }
 
-# Database Secret Container
+# 5. Database Secret in Secrets Manager
 resource "aws_secretsmanager_secret" "db_secret" {
+  # Gebruik de suffix om "name already exists" fouten te voorkomen
   name                    = "pxl-${var.environment}-db-creds-${random_id.secret_suffix.hex}"
-  recovery_window_in_days = 0 # Handig voor lab: direct verwijderen bij destroy
+  recovery_window_in_days = 0 
 }
 
-# Database Secret Waarde
 resource "aws_secretsmanager_secret_version" "db_secret_val" {
   secret_id     = aws_secretsmanager_secret.db_secret.id
   secret_string = jsonencode({
     username = "postgres"
     password = var.db_password
-    host     = var.db_endpoint
+    host     = aws_db_instance.postgres.address # GEFIXT: Verwijst nu naar 'postgres'
+    port     = 5432
   })
 }
 
-# Media Signing Secret Container
+# 6. Media Secret
 resource "aws_secretsmanager_secret" "media_secret" {
   name                    = "pxl-${var.environment}-media-key-${random_id.secret_suffix.hex}"
   recovery_window_in_days = 0
 }
 
-# Media Signing Secret Waarde
 resource "aws_secretsmanager_secret_version" "media_val" {
   secret_id     = aws_secretsmanager_secret.media_secret.id
   secret_string = var.media_signing_key

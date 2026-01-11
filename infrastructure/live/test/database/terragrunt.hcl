@@ -15,6 +15,8 @@ inputs = {
   region             = "us-east-1"
   vpc_id             = dependency.network.outputs.vpc_id
   private_subnet_ids = dependency.network.outputs.private_subnet_ids
-  # De ARN van je secret in AWS Secrets Manager
-  db_secret_arn    = dependency.database.outputs.db_secret_arn
+  
+  # Je geeft GEEN ARN mee, maar de WAARDES die in de secret moeten komen
+  db_password       = "PXL_Secret_2026!" 
+  media_signing_key = "Media_Secret_Key_123!"
 }
