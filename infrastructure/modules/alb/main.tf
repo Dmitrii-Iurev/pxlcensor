@@ -15,6 +15,14 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Optioneel: voeg poort 80 toe voor testen mocht 443 nog lastig doen
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -62,32 +70,15 @@ resource "aws_lb_target_group" "tg" {
   }
 }
 
-# --- 1. Het certificaat aanvragen ---
-resource "aws_acm_certificate" "cert" {
-  domain_name       = "pxlcensor.local"
-  validation_method = "DNS"
-
-  # DIT IS DE KEY: Zorg dat Terraform niet probeert te wachten
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  # Optioneel: Sommige provider versies accepteren dit om wachten te voorkomen
-  options {
-    certificate_transparency_logging_preference = "ENABLED"
-  }
-}
-
-# --- 2. De Listener ---
+# --- 4. De HTTPS Listener (ZONDER de aws_acm_certificate resource) ---
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.alb.arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
   
-  # We koppelen de ARN direct. Omdat er GEEN 'aws_acm_certificate_validation' 
-  # resource in je code staat, zou Terraform direct door moeten gaan.
-  certificate_arn   = aws_acm_certificate.cert.arn 
+  # GEBRUIK DE VARIABELE (De ARN die je handmatig hebt geplakt in terragrunt.hcl)
+  certificate_arn   = var.ssl_cert_arn 
 
   default_action {
     type             = "forward"
@@ -95,7 +86,7 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# --- 6. Listener Rules (Path-based routing) ---
+# --- 5. Listener Rules (Path-based routing) ---
 resource "aws_lb_listener_rule" "rules" {
   for_each = local.web_configs
 

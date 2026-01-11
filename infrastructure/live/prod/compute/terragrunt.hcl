@@ -32,8 +32,8 @@ inputs = {
   base_url           = "https://pxlcensor-prod.jouwdomein.be" # Je echte URL
   
   # Productie Secrets (Andere ARNs dan in TEST!)
-  db_secret_arn      = "arn:aws:secretsmanager:us-east-1:905418273841:secret:prod/db/credentials-OINAhB"
-  media_secret_arn   = "arn:aws:secretsmanager:us-east-1:905418273841:secret:prod/media/signing_secret-tmXk7g"
+  db_secret_arn = dependency.database.outputs.db_secret_arn
+  media_secret_arn = dependency.database.outputs.media_secret_arn
   
   services           = ["frontend", "api", "media", "processor"]
 }

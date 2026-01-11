@@ -16,6 +16,6 @@ inputs = {
   vpc_id             = dependency.network.outputs.vpc_id
   private_subnet_ids = dependency.network.outputs.private_subnet_ids
   
-  # Zorg dat je een unieke secret hebt voor productie!
-  db_secret_arn      = "arn:aws:secretsmanager:us-east-1:905418273841:secret:prod/db/credentials-OINAhB"
+    db_password       = "PXL_Secret_2026!" 
+    media_signing_key = "Media_Secret_Key_123!"
 }
