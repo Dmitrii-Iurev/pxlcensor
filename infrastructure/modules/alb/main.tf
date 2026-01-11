@@ -15,7 +15,6 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Egress naar de containers toe
   egress {
     from_port   = 0
     to_port     = 0
@@ -35,13 +34,12 @@ resource "aws_lb" "alb" {
   subnets            = var.public_subnet_ids
 }
 
-# --- 3. Target Groups (Eis: Nuttige Loop) ---
-# We definiëren de poorten per service om de applicatie werkend te krijgen.
+# --- 3. Target Groups ---
 locals {
   web_configs = {
     api      = { port = 3000, priority = 10, path = ["/api", "/api/*"] }
     media    = { port = 8081, priority = 20, path = ["/media", "/media/*"] }
-    frontend = { port = 80,   priority = 30, path = ["/*"] } # Frontend is vaak poort 80
+    frontend = { port = 80,   priority = 30, path = ["/*"] } 
   }
 }
 
@@ -52,7 +50,7 @@ resource "aws_lb_target_group" "tg" {
   port        = each.value.port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "ip" # Vereist voor Fargate
+  target_type = "ip"
 
   health_check {
     path                = "/health"
@@ -64,22 +62,33 @@ resource "aws_lb_target_group" "tg" {
   }
 }
 
-# --- 4. HTTPS Listener (Eis: Poort 443) ---
+# --- 4. Certificaat ---
+resource "aws_acm_certificate" "cert" {
+  domain_name       = "pxlcensor.local"
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# --- 4. HTTPS Listener ---
 resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.alb.arn
   port              = "443"
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-2016-08"
-  certificate_arn   = var.ssl_cert_arn
+  
+  # GEBRUIK HIER DE VARIABELE UIT TERRAGRUNT
+  certificate_arn   = var.ssl_cert_arn 
 
-  # Standaard actie: als niks matcht, stuur naar de frontend
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.tg["frontend"].arn
   }
 }
 
-# --- 5. Listener Rules (Path-based routing) ---
+# --- 6. Listener Rules (Path-based routing) ---
 resource "aws_lb_listener_rule" "rules" {
   for_each = local.web_configs
 

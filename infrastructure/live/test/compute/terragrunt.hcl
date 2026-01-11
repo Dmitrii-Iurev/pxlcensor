@@ -37,6 +37,6 @@ inputs = {
   autoscale          = false # EIS: Test draait op 1 instance
   
   # Secrets
-  db_secret_arn      = "arn:aws:secretsmanager:us-east-1:905418273841:secret:test/db/credentials-aF0mMb"
-  media_secret_arn   = "arn:aws:secretsmanager:us-east-1:905418273841:secret:test/media/signing_secret-QQ26IZ"
+  db_secret_arn    = dependency.database.outputs.db_secret_arn
+  media_secret_arn = dependency.database.outputs.media_secret_arn
 }

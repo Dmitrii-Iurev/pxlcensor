@@ -50,3 +50,36 @@ resource "aws_security_group" "db" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+# Genereert een unieke suffix voor de secret naam
+resource "random_id" "secret_suffix" {
+  byte_length = 4
+}
+
+# Database Secret Container
+resource "aws_secretsmanager_secret" "db_secret" {
+  name                    = "pxl-${var.environment}-db-creds-${random_id.secret_suffix.hex}"
+  recovery_window_in_days = 0 # Handig voor lab: direct verwijderen bij destroy
+}
+
+# Database Secret Waarde
+resource "aws_secretsmanager_secret_version" "db_secret_val" {
+  secret_id     = aws_secretsmanager_secret.db_secret.id
+  secret_string = jsonencode({
+    username = "postgres"
+    password = var.db_password
+    host     = var.db_endpoint
+  })
+}
+
+# Media Signing Secret Container
+resource "aws_secretsmanager_secret" "media_secret" {
+  name                    = "pxl-${var.environment}-media-key-${random_id.secret_suffix.hex}"
+  recovery_window_in_days = 0
+}
+
+# Media Signing Secret Waarde
+resource "aws_secretsmanager_secret_version" "media_val" {
+  secret_id     = aws_secretsmanager_secret.media_secret.id
+  secret_string = var.media_signing_key
+}

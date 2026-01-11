@@ -9,3 +9,8 @@ output "target_group_arns" {
 output "alb_sg_id" {
   value = aws_security_group.alb.id
 }
+
+# De ARN van de HTTPS listener (optioneel, maar handig voor debugging)
+output "listener_arn" {
+  value = aws_lb_listener.https.arn
+}
