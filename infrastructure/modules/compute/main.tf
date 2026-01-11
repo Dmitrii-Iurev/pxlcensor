@@ -2,38 +2,10 @@ terraform {
   backend "s3" {}
 }
 
-# --- 1. IAM Roles voor ECS ---
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "pxl-${var.environment}-ecs-task-execution-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = { Service = "ecs-tasks.amazonaws.com" }
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-# Extra permissies om secrets te lezen uit SSM/Secrets Manager
-resource "aws_iam_role_policy" "secrets_policy" {
-  name = "pxl-${var.environment}-secrets-policy"
-  role = aws_iam_role.ecs_task_execution_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["ssm:GetParameters", "secretsmanager:GetSecretValue"]
-      Resource = ["*"]
-    }]
-  })
+# --- 1. Bestaande IAM Role ophalen (AWS Academy Fix) ---
+# We gebruiken 'data' in plaats van 'resource' omdat we geen rollen mogen maken.
+data "aws_iam_role" "lab_role" {
+  name = "LabRole"
 }
 
 # --- 2. Shared Storage (EFS) ---
@@ -55,7 +27,7 @@ resource "aws_ecs_cluster" "main" {
   name = "pxl-${var.environment}-cluster"
 }
 
-# --- 4. Task Definitions (De Loop) ---
+# --- 4. Task Definitions ---
 resource "aws_ecs_task_definition" "tasks" {
   for_each = toset(var.services)
 
@@ -64,11 +36,14 @@ resource "aws_ecs_task_definition" "tasks" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "512"
   memory                   = "1024"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  
+  # GEBRUIK DE LABROLE ARN HIER
+  execution_role_arn       = data.aws_iam_role.lab_role.arn
+  task_role_arn            = data.aws_iam_role.lab_role.arn
 
   container_definitions = jsonencode([{
     name  = each.key
-    image = "pxlcensor/${each.key}:latest" # Pas aan naar jouw ECR/DockerHub
+    image = "pxlcensor/${each.key}:latest"
     
     portMappings = [{
       containerPort = (each.key == "api" ? 3000 : each.key == "media" ? 8081 : each.key == "frontend" ? 8080 : 80)
@@ -107,14 +82,13 @@ resource "aws_ecs_service" "services" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.tasks[each.key].arn
   launch_type     = "FARGATE"
-  desired_count   = 1 # Start altijd met 1
+  desired_count   = 1
 
   network_configuration {
     subnets         = var.private_subnet_ids
     security_groups = [aws_security_group.app_sg.id]
   }
 
-  # Alleen koppelen aan ALB als het geen processor is
   dynamic "load_balancer" {
     for_each = contains(["frontend", "api", "media"], each.key) ? [1] : []
     content {
@@ -125,9 +99,8 @@ resource "aws_ecs_service" "services" {
   }
 }
 
-# --- 6. Autoscaling (De Conditional) ---
+# --- 6. Autoscaling ---
 resource "aws_appautoscaling_target" "api_processor_scale" {
-  # Pas autoscaling alleen toe op api en processor in PROD
   for_each = (var.environment == "prod" && var.autoscale) ? toset(["api", "processor"]) : toset([])
 
   max_capacity       = 2
@@ -138,14 +111,11 @@ resource "aws_appautoscaling_target" "api_processor_scale" {
 }
 
 # --- 7. Security Groups ---
-
-# Security Group voor de Applicaties (ECS Tasks)
 resource "aws_security_group" "app_sg" {
   name        = "pxl-${var.environment}-app-sg"
   description = "Toegang voor ECS services"
   vpc_id      = var.vpc_id
 
-  # Inkomend verkeer van de ALB
   ingress {
     from_port       = 0
     to_port         = 65535
@@ -153,7 +123,6 @@ resource "aws_security_group" "app_sg" {
     security_groups = [var.alb_sg_id]
   }
 
-  # Uitgaand verkeer naar overal (voor updates/interne communicatie)
   egress {
     from_port   = 0
     to_port     = 0
@@ -162,13 +131,11 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# Security Group voor de EFS (Shared Storage)
 resource "aws_security_group" "efs_sg" {
   name        = "pxl-${var.environment}-efs-sg"
   description = "Toegang tot EFS vanaf de app"
   vpc_id      = var.vpc_id
 
-  # Alleen de apps (app_sg) mogen bij de EFS op poort 2049 (NFS)
   ingress {
     from_port       = 2049
     to_port         = 2049
