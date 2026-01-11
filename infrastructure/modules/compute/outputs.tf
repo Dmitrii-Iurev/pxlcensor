@@ -16,8 +16,8 @@ output "efs_id" {
   value       = aws_efs_file_system.media.id
 }
 
-# De Task Execution Role ARN (handig voor auditing/security)
+# GEFIXT: Verwijst nu naar de LabRole data source
 output "execution_role_arn" {
   description = "De IAM role die de containers gebruiken om logs/secrets te laden"
-  value       = aws_iam_role.ecs_task_execution_role.arn
+  value       = data.aws_iam_role.lab_role.arn
 }
