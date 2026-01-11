@@ -18,5 +18,5 @@ inputs = {
   services          = ["frontend", "api", "media"]
   
   # Gebruik een certificaat dat gekoppeld is aan je prod-domein
-  ssl_cert_arn      = "arn:aws:acm:us-east-1:905418273841:certificate/prod-uuid"
+  ssl_cert_arn      = null
 }
