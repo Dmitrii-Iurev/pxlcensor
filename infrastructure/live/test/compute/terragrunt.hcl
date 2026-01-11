@@ -28,6 +28,9 @@ inputs = {
   db_endpoint        = dependency.database.outputs.db_endpoint
   target_group_arns  = dependency.alb.outputs.target_group_arns
   base_url           = "https://${dependency.alb.outputs.alb_dns_name}"
+
+  # VOEG DEZE REGEL TOE:
+  alb_sg_id          = dependency.alb.outputs.alb_security_group_id
   
   # Applicatie instellingen
   services           = ["frontend", "api", "media", "processor"]
