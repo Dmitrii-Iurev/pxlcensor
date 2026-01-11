@@ -2,10 +2,6 @@ terraform {
   backend "s3" {}
 }
 
-provider "aws" {
-  region = var.region
-}
-
 # 1. DB Subnet Group
 resource "aws_db_subnet_group" "main" {
   name        = "${var.environment}-db-subnet-group"
