@@ -18,5 +18,5 @@ inputs = {
   services          = ["frontend", "api", "media"]
   
   # De ARN is nu gecorrigeerd (accolade verwijderd uit de string) en het blok wordt netjes gesloten
-  ssl_cert_arn      = "arn:aws:acm:us-east-1:905418273841:certificate/1dadd03e-d472-4fac-8f8f-501e5bf88fdc"
+  ssl_cert_arn      = "arn:aws:acm:us-east-1:905418273841:certificate/78853907-e2df-446e-a052-736dca8c599b"
 }
