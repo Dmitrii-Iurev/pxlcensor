@@ -23,13 +23,16 @@ inputs = {
   private_subnet_ids = dependency.network.outputs.private_subnet_ids
   db_endpoint        = dependency.database.outputs.db_endpoint
   
+  # VOEG DEZE REGEL TOE:
+  alb_sg_id          = dependency.alb.outputs.alb_sg_id
+
   # Load Balancer
   target_group_arns  = dependency.alb.outputs.target_group_arns
   base_url           = "https://pxlcensor-prod.jouwdomein.be" # Je echte URL
   
   # Productie Secrets (Andere ARNs dan in TEST!)
-  db_secret_arn      = null
-  media_secret_arn   = null
+  db_secret_arn      = "arn:aws:secretsmanager:us-east-1:905418273841:secret:prod/db/credentials-OINAhB"
+  media_secret_arn   = "arn:aws:secretsmanager:us-east-1:905418273841:secret:prod/media/signing_secret-tmXk7g"
   
   services           = ["frontend", "api", "media", "processor"]
 }
