@@ -1,4 +1,5 @@
-# infrastructure/terragrunt.hcl
+# infrastructure/live/terragrunt.hcl
+
 remote_state {
   backend = "s3"
   config = {
@@ -10,11 +11,15 @@ remote_state {
   }
 }
 
-terraform {
-  extra_arguments "env_vars" {
-    commands = ["apply", "plan"]
-    env_vars = {
-      AWS_PROFILE = "default"
-    }
-  }
+# DIT VOEGT DE ONTBREKENDE PROVIDER CONFIG TOE AAN ELKE MODULE
+generate "provider" {
+  path      = "provider.tf"
+  if_exists = "overwrite_terragrunt"
+  contents  = <<EOF
+provider "aws" {
+  region = "us-east-1"
 }
+EOF
+}
+
+# VERWIJDER HET OUDE "extra_arguments" BLOK VOLLEDIG
